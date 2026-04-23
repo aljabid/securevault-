@@ -1,0 +1,345 @@
+version: "3.9"
+
+# SecureVault — Docker Compose
+# Classification: Internal — Do not expose to public networks
+# Usage: docker-compose up --build
+#
+# Services:
+#   nginx         — Reverse proxy, TLS 1.3, security headers
+#   backend       — Django REST API
+#   frontend      — React SPA (served via NGINX in production)
+#   postgres      — PostgreSQL 16 (primary database)
+#   redis         — Session store, cache, rate limiting, Celery broker
+#   celery        — Async task worker (file processing)
+#   minio         — Object storage (S3-compatible)
+#   clamav        — Antivirus daemon
+#   elasticsearch — SIEM audit log storage
+#   kibana        — SIEM dashboard
+
+x-common-env: &common-env
+  APP_ENV: ${APP_ENV:-development}
+  SECRET_KEY: ${SECRET_KEY}
+  DEBUG: ${DEBUG:-False}
+  DB_NAME: ${DB_NAME:-securevault_db}
+  DB_USER: ${DB_USER:-securevault_user}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+  CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/2
+  MINIO_ENDPOINT: minio:9000
+  MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+  MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+  MINIO_BUCKET: ${MINIO_BUCKET:-securevault-files}
+  CLAMAV_HOST: clamav
+  CLAMAV_PORT: "3310"
+  ELASTICSEARCH_HOST: elasticsearch:9200
+  JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
+  JWT_PUBLIC_KEY_PATH: /run/secrets/jwt_public_key
+
+services:
+
+  # ─────────────────────────────────────────────
+  # NGINX — Reverse Proxy & TLS Termination
+  # ─────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: securevault-nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"       # Redirect HTTP → HTTPS
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_certs:/etc/ssl/certs:ro
+    depends_on:
+      - backend
+    networks:
+      - dmz
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+
+  # ─────────────────────────────────────────────
+  # DJANGO BACKEND
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ../../src/backend
+      dockerfile: ../../infra/docker/Dockerfile.backend
+    container_name: securevault-backend
+    restart: unless-stopped
+    expose:
+      - "8000"   # Not published externally — NGINX proxies
+    environment:
+      <<: *common-env
+    env_file:
+      - ../../.env
+    secrets:
+      - jwt_private_key
+      - jwt_public_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clamav:
+        condition: service_started
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"  # Non-root user
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/staticfiles
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─────────────────────────────────────────────
+  # CELERY WORKER
+  # ─────────────────────────────────────────────
+  celery:
+    build:
+      context: ../../src/backend
+      dockerfile: ../../infra/docker/Dockerfile.backend
+    container_name: securevault-celery
+    restart: unless-stopped
+    command: celery -A src.backend.core worker --loglevel=info --concurrency=4 --max-tasks-per-child=100
+    environment:
+      <<: *common-env
+    env_file:
+      - ../../.env
+    secrets:
+      - jwt_private_key
+      - jwt_public_key
+    depends_on:
+      - postgres
+      - redis
+      - clamav
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    user: "1001:1001"
+
+  # ─────────────────────────────────────────────
+  # POSTGRESQL 16
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: securevault-postgres
+    restart: unless-stopped
+    expose:
+      - "5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-securevault_db}
+      POSTGRES_USER: ${DB_USER:-securevault_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --auth-local=scram-sha-256"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../scripts/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-securevault_user} -d ${DB_NAME:-securevault_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+      - -c
+      - ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+      - -c
+      - log_connections=on
+      - -c
+      - log_disconnections=on
+      - -c
+      - log_duration=on
+      - -c
+      - log_statement=mod    # Log INSERT/UPDATE/DELETE
+
+  # ─────────────────────────────────────────────
+  # REDIS 7
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: securevault-redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 60 1000
+      --loglevel notice
+      --protected-mode yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # MINIO — Object Storage
+  # ─────────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: securevault-minio
+    restart: unless-stopped
+    expose:
+      - "9000"   # API (not published externally)
+      - "9001"   # Console (not published externally)
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+      MINIO_VOLUMES: /data
+      MINIO_SITE_NAME: securevault
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # ─────────────────────────────────────────────
+  # CLAMAV — Antivirus
+  # ─────────────────────────────────────────────
+  clamav:
+    image: clamav/clamav:stable
+    container_name: securevault-clamav
+    restart: unless-stopped
+    expose:
+      - "3310"
+    volumes:
+      - clamav_db:/var/lib/clamav
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "clamdcheck"]
+      interval: 60s
+      timeout: 30s
+      retries: 3
+
+  # ─────────────────────────────────────────────
+  # ELASTICSEARCH — SIEM Audit Log Storage
+  # ─────────────────────────────────────────────
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: securevault-elasticsearch
+    restart: unless-stopped
+    expose:
+      - "9200"
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTICSEARCH_PASSWORD:-changeme}
+      - xpack.security.audit.enabled=true
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+  # ─────────────────────────────────────────────
+  # KIBANA — SIEM Dashboard
+  # ─────────────────────────────────────────────
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.0
+    container_name: securevault-kibana
+    restart: unless-stopped
+    expose:
+      - "5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD:-changeme}
+    depends_on:
+      - elasticsearch
+    networks:
+      - internal
+
+# ─────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────
+networks:
+  dmz:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  internal:
+    driver: bridge
+    internal: true   # Not routable to internet
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+# ─────────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+  clamav_db:
+    driver: local
+  nginx_certs:
+    driver: local
+
+# ─────────────────────────────────────────────
+# SECRETS (Docker secrets for sensitive values)
+# ─────────────────────────────────────────────
+secrets:
+  jwt_private_key:
+    file: ../../secrets/jwt_private_key.pem
+  jwt_public_key:
+    file: ../../secrets/jwt_public_key.pem

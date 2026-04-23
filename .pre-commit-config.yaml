@@ -1,0 +1,113 @@
+# SecureVault — Pre-commit Security Hooks
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # ─────────────────────────────────────────────
+  # PYTHON SECURITY — BANDIT SAST
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.7
+    hooks:
+      - id: bandit
+        name: Bandit — Python SAST
+        args: ["-ll", "-r", "src/backend/", "--skip", "B101,B601"]
+        # B101: assert usage (ok in tests), B601: paramiko shell (not used)
+
+  # ─────────────────────────────────────────────
+  # SECRET DETECTION
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.67.5
+    hooks:
+      - id: trufflehog
+        name: TruffleHog — Secret Scanner
+        args: ["--only-verified", "--fail"]
+
+  # ─────────────────────────────────────────────
+  # GENERAL SECURITY
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: detect-private-key
+        name: Detect Private Keys
+      - id: check-merge-conflict
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]  # Block files over 1MB
+      - id: no-commit-to-branch
+        args: ["--branch", "main", "--branch", "production"]
+
+  # ─────────────────────────────────────────────
+  # SEMGREP — Multi-language SAST
+  # ─────────────────────────────────────────────
+  - repo: https://github.com/returntocorp/semgrep
+    rev: v1.57.0
+    hooks:
+      - id: semgrep
+        name: Semgrep — Security Rules
+        args: ["--config", "p/owasp-top-ten", "--config", "p/django", "--error"]
+        types: [python]
+
+  # ─────────────────────────────────────────────
+  # CUSTOM LOCAL RULES
+  # ─────────────────────────────────────────────
+  - repo: local
+    hooks:
+      - id: no-raw-sql
+        name: "Security: No raw SQL string concatenation"
+        language: pygrep
+        entry: "cursor\\.execute\\(['\"]\\s*(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER)"
+        types: [python]
+        files: "^src/backend/"
+
+      - id: no-eval
+        name: "Security: No eval() in production code"
+        language: pygrep
+        entry: "\\beval\\s*\\("
+        types: [python]
+        files: "^src/backend/"
+        exclude: "tests/"
+
+      - id: no-debug-true
+        name: "Security: No DEBUG=True in settings"
+        language: pygrep
+        entry: "^DEBUG\\s*=\\s*True"
+        types: [python]
+        files: "settings"
+
+      - id: no-hardcoded-secrets
+        name: "Security: No hardcoded secret values"
+        language: pygrep
+        entry: "(SECRET_KEY|PASSWORD|API_KEY|TOKEN|PRIVATE_KEY)\\s*=\\s*['\"][^'\"]{8,}"
+        types: [python]
+        files: "^src/"
+
+      - id: no-localstorage-tokens
+        name: "Security: No token storage in localStorage"
+        language: pygrep
+        entry: "localStorage\\.setItem\\(['\"].*token"
+        types: [ts, tsx, js, jsx]
+
+      - id: no-innerhtml-raw
+        name: "Security: No unsanitized innerHTML"
+        language: pygrep
+        entry: "\\.innerHTML\\s*="
+        types: [ts, tsx, js, jsx]
+
+      - id: no-md5-sha1-passwords
+        name: "Security: No MD5/SHA1 for passwords or tokens"
+        language: pygrep
+        entry: "hashlib\\.(md5|sha1)\\("
+        types: [python]
+        files: "^src/backend/(auth|utils)"
+
+      - id: require-domPurify
+        name: "Security: dangerouslySetInnerHTML requires DOMPurify"
+        language: pygrep
+        entry: "dangerouslySetInnerHTML=\\{\\{\\s*__html:\\s*(?!DOMPurify)"
+        types: [ts, tsx]

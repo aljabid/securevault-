@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureVault — Full Security Report v5.0.0</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0a0c10;
+    --surface: #0f1117;
+    --surface2: #161b22;
+    --surface3: #1c2130;
+    --border: #21262d;
+    --border2: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --accent: #58a6ff;
+    --accent2: #1f6feb;
+    --green: #3fb950;
+    --green-bg: #0d2818;
+    --red: #f85149;
+    --red-bg: #2a0d0d;
+    --orange: #d29922;
+    --orange-bg: #271d0a;
+    --yellow: #e3b341;
+    --yellow-bg: #27200a;
+    --blue: #58a6ff;
+    --blue-bg: #0a1628;
+    --purple: #bc8cff;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* COVER PAGE */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, #0a0c10 0%, #0f1117 50%, #0a1628 100%);
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: 
+      repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(88,166,255,0.03) 40px, rgba(88,166,255,0.03) 41px),
+      repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(88,166,255,0.03) 40px, rgba(88,166,255,0.03) 41px);
+  }
+
+  .cover-classification {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--red);
+    border: 1px solid var(--red);
+    padding: 4px 12px;
+    text-transform: uppercase;
+  }
+
+  .cover-logo {
+    font-family: var(--mono);
+    font-size: 48px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+
+  .cover-logo span { color: var(--text3); }
+
+  .cover-subtitle {
+    font-size: 13px;
+    color: var(--text3);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 60px;
+    font-family: var(--mono);
+  }
+
+  .cover-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 16px;
+    max-width: 700px;
+    line-height: 1.3;
+  }
+
+  .cover-desc {
+    font-size: 15px;
+    color: var(--text2);
+    max-width: 560px;
+    margin-bottom: 60px;
+  }
+
+  .cover-meta {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 700px;
+    width: 100%;
+    margin-bottom: 60px;
+  }
+
+  .cover-meta-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .cover-meta-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .cover-meta-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .phase-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .phase-badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+
+  .phase-badge.complete {
+    color: var(--green);
+    border-color: var(--green);
+    background: var(--green-bg);
+  }
+
+  /* LAYOUT */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  /* NAV */
+  .toc {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 0;
+    page-break-after: always;
+  }
+
+  .toc-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface2);
+    text-decoration: none;
+    color: var(--text2);
+    transition: all 0.2s;
+  }
+
+  .toc-item:hover {
+    border-color: var(--accent2);
+    color: var(--accent);
+    background: var(--blue-bg);
+  }
+
+  .toc-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    width: 24px;
+  }
+
+  .toc-phase {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: auto;
+    font-family: var(--mono);
+  }
+
+  .toc-phase.p1 { background: var(--red-bg); color: var(--red); }
+  .toc-phase.p2 { background: var(--orange-bg); color: var(--orange); }
+  .toc-phase.p3 { background: var(--green-bg); color: var(--green); }
+  .toc-phase.p4 { background: var(--blue-bg); color: var(--blue); }
+  .toc-phase.p5 { background: #1a1040; color: var(--purple); }
+
+  /* SECTION */
+  .section {
+    padding: 60px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    background: var(--blue-bg);
+    border: 1px solid var(--accent2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    margin-top: 4px;
+  }
+
+  .section-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .section-meta {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    margin: 24px 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: var(--mono);
+  }
+
+  p { color: var(--text2); margin-bottom: 12px; }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13px;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid var(--border2);
+  }
+
+  td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+
+  tr:hover td { background: var(--surface2); }
+
+  /* SEVERITY BADGES */
+  .sev {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sev-critical { background: #3a0a0a; color: #ff6b6b; border: 1px solid #ff6b6b40; }
+  .sev-high { background: var(--red-bg); color: var(--red); border: 1px solid var(--red); }
+  .sev-medium { background: var(--orange-bg); color: var(--orange); border: 1px solid var(--orange); }
+  .sev-low { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--accent2); }
+  .sev-info { background: var(--surface2); color: var(--text3); border: 1px solid var(--border2); }
+
+  .status-ok { color: var(--green); font-family: var(--mono); font-size: 12px; }
+  .status-accepted { color: var(--yellow); font-family: var(--mono); font-size: 12px; }
+
+  /* CODE BLOCKS */
+  pre {
+    background: #010409;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 20px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    color: #a9b7c6;
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--surface2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--accent);
+  }
+
+  /* CARDS */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .card-value {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .card-desc { font-size: 12px; color: var(--text3); }
+
+  .card.critical .card-value { color: #ff6b6b; }
+  .card.high .card-value { color: var(--red); }
+  .card.medium .card-value { color: var(--orange); }
+  .card.low .card-value { color: var(--blue); }
+  .card.success .card-value { color: var(--green); }
+  .card.accent .card-value { color: var(--accent); }
+
+  /* RISK MATRIX */
+  .risk-matrix {
+    display: grid;
+    grid-template-columns: 40px repeat(5, 1fr);
+    gap: 3px;
+    margin: 24px 0;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+
+  .matrix-cell {
+    padding: 8px 4px;
+    text-align: center;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  .matrix-header { color: var(--text3); display: flex; align-items: center; justify-content: center; }
+  .matrix-axis { color: var(--text3); writing-mode: vertical-lr; transform: rotate(180deg); font-size: 9px; }
+
+  .mc-crit { background: #3a0a0a; color: #ff6b6b; }
+  .mc-high { background: var(--red-bg); color: var(--red); }
+  .mc-med { background: var(--orange-bg); color: var(--orange); }
+  .mc-low { background: var(--blue-bg); color: var(--blue); }
+  .mc-min { background: var(--surface2); color: var(--text3); }
+
+  /* FINDING CARD */
+  .finding {
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .finding-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .finding-id {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    min-width: 60px;
+  }
+
+  .finding-title { font-weight: 600; color: var(--text); flex: 1; }
+
+  .finding-body { padding: 20px; }
+
+  .finding-meta {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .finding-meta-item {}
+  .finding-meta-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+  .finding-meta-value { font-size: 13px; font-weight: 600; color: var(--text); }
+
+  .cvss-score {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  /* TIMELINE */
+  .timeline { padding: 20px 0; }
+  .timeline-item { display: flex; gap: 16px; margin-bottom: 24px; }
+  .timeline-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-top: 6px; flex-shrink: 0; }
+  .timeline-line { width: 1px; background: var(--border2); margin: 0 auto; }
+  .timeline-content { flex: 1; }
+  .timeline-date { font-family: var(--mono); font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .timeline-title { font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .timeline-desc { font-size: 13px; color: var(--text2); }
+
+  /* GRADE */
+  .grade-display {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 30px;
+    margin: 24px 0;
+  }
+
+  .grade-letter {
+    font-size: 80px;
+    font-weight: 700;
+    color: var(--green);
+    font-family: var(--mono);
+    line-height: 1;
+  }
+
+  .grade-info { flex: 1; }
+  .grade-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .grade-desc { color: var(--text2); font-size: 14px; }
+
+  /* ARCH DIAGRAM */
+  .arch-box {
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    padding: 16px;
+    background: var(--surface2);
+    margin: 8px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  .arch-arrow { text-align: center; color: var(--accent2); font-size: 18px; margin: 4px 0; }
+  .arch-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
+  .arch-name { font-size: 14px; font-weight: 600; color: var(--accent); }
+  .arch-detail { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+  /* FOOTER */
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 30px 0;
+    text-align: center;
+  }
+
+  .footer-classification {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--red);
+    margin-bottom: 8px;
+  }
+
+  .footer-text { font-size: 12px; color: var(--text3); }
+
+  /* PRINT */
+  @media print {
+    .cover, .section { page-break-inside: avoid; }
+    a { text-decoration: none; color: inherit; }
+    pre { white-space: pre-wrap; }
+  }
+
+  ul { padding-left: 20px; color: var(--text2); margin-bottom: 12px; }
+  li { margin-bottom: 4px; }
+  strong { color: var(--text); }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    margin: 2px;
+  }
+
+  .highlight-box {
+    background: var(--blue-bg);
+    border: 1px solid var(--accent2);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .warn-box {
+    background: var(--orange-bg);
+    border: 1px solid var(--orange);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 13px;
+    color: var(--text2);
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="cover-classification">CONFIDENTIAL</div>
+  <div class="cover-logo">Secure<span>Vault</span></div>
+  <div class="cover-subtitle">Security Engineering Report</div>
+  <div class="cover-title">Comprehensive Security Assessment & Implementation Report</div>
+  <p class="cover-desc">Full Secure SDLC documentation covering Risk Analysis, Threat Modeling, Secure Architecture, Implementation, and Penetration Testing.</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Version</div>
+      <div class="cover-meta-value">v5.0.0-final</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Date</div>
+      <div class="cover-meta-value">2025-01-31</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Classification</div>
+      <div class="cover-meta-value" style="color:var(--red)">Confidential</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Overall Risk Grade</div>
+      <div class="cover-meta-value" style="color:var(--green)">A−</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Pentest Findings</div>
+      <div class="cover-meta-value">12 (0 open)</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Compliance</div>
+      <div class="cover-meta-value">GDPR · ISO 27001 · NIST</div>
+    </div>
+  </div>
+  <div class="phase-badges">
+    <span class="phase-badge complete">✓ Phase 1: Risk Analysis</span>
+    <span class="phase-badge complete">✓ Phase 2: Secure Design</span>
+    <span class="phase-badge complete">✓ Phase 3: Implementation</span>
+    <span class="phase-badge complete">✓ Phase 4: Penetration Test</span>
+    <span class="phase-badge complete">✓ Phase 5: Compliance</span>
+  </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <div class="container">
+    <div class="toc-title">Table of Contents</div>
+    <div class="toc-grid">
+      <a href="#exec-summary" class="toc-item">
+        <span class="toc-num">01</span>
+        <span>Executive Summary</span>
+        <span class="toc-phase p5">All Phases</span>
+      </a>
+      <a href="#scope" class="toc-item">
+        <span class="toc-num">02</span>
+        <span>Scope & Objectives</span>
+        <span class="toc-phase p1">Phase 1</span>
+      </a>
+      <a href="#risk-analysis" class="toc-item">
+        <span class="toc-num">03</span>
+        <span>Risk Analysis & Threat Modeling</span>
+        <span class="toc-phase p1">Phase 1</span>
+      </a>
+      <a href="#architecture" class="toc-item">
+        <span class="toc-num">04</span>
+        <span>Security Architecture</span>
+        <span class="toc-phase p2">Phase 2</span>
+      </a>
+      <a href="#implementation" class="toc-item">
+        <span class="toc-num">05</span>
+        <span>Secure Implementation</span>
+        <span class="toc-phase p3">Phase 3</span>
+      </a>
+      <a href="#pentest" class="toc-item">
+        <span class="toc-num">06</span>
+        <span>Penetration Test Results</span>
+        <span class="toc-phase p4">Phase 4</span>
+      </a>
+      <a href="#compliance" class="toc-item">
+        <span class="toc-num">07</span>
+        <span>Compliance Mapping</span>
+        <span class="toc-phase p5">Phase 5</span>
+      </a>
+      <a href="#lessons" class="toc-item">
+        <span class="toc-num">08</span>
+        <span>Lessons Learned & Future Work</span>
+        <span class="toc-phase p5">Phase 5</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1: EXECUTIVE SUMMARY -->
+<div class="section" id="exec-summary">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div>
+        <div class="section-title">Executive Summary</div>
+        <div class="section-meta">SVP-FINAL-001 · v5.0.0 · 2025-01-31</div>
+      </div>
+    </div>
+
+    <div class="grade-display">
+      <div class="grade-letter">A−</div>
+      <div class="grade-info">
+        <div class="grade-title">Overall Security Posture: Strong</div>
+        <div class="grade-desc">SecureVault achieves an A− security grade post-remediation. All Critical and High findings from the penetration test have been resolved. The platform is production-ready with documented residual risks formally accepted by the CISO. Full compliance with GDPR, ISO/IEC 27001:2022, and NIST CSF is demonstrated.</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card accent">
+        <div class="card-label">Risks Identified</div>
+        <div class="card-value">18</div>
+        <div class="card-desc">Across 5×5 risk matrix</div>
+      </div>
+      <div class="card success">
+        <div class="card-label">Risks Mitigated</div>
+        <div class="card-value">17</div>
+        <div class="card-desc">1 accepted with residual risk</div>
+      </div>
+      <div class="card accent">
+        <div class="card-label">Pentest Findings</div>
+        <div class="card-value">12</div>
+        <div class="card-desc">0 Critical, 2 High (both fixed)</div>
+      </div>
+      <div class="card success">
+        <div class="card-label">Open Findings</div>
+        <div class="card-value">0</div>
+        <div class="card-desc">All High/Medium remediated</div>
+      </div>
+      <div class="card accent">
+        <div class="card-label">TLS Grade</div>
+        <div class="card-value">A+</div>
+        <div class="card-desc">TLS 1.3 only, HSTS preload</div>
+      </div>
+      <div class="card success">
+        <div class="card-label">Headers Grade</div>
+        <div class="card-value">A+</div>
+        <div class="card-desc">All security headers present</div>
+      </div>
+    </div>
+
+    <h3>Key Security Achievements</h3>
+    <ul>
+      <li><strong>Zero SQL injection vectors</strong> — Django ORM used exclusively; SAST confirmed no raw SQL strings</li>
+      <li><strong>Argon2id password hashing</strong> — PHC winner, resistant to GPU/ASIC attacks (time=2, mem=65536)</li>
+      <li><strong>JWT RS256 with algorithm enforcement</strong> — Algorithm confusion attack (PT-001) detected and fixed</li>
+      <li><strong>Full IDOR protection</strong> — Every file access verifies ownership server-side (PT-002 detected and fixed)</li>
+      <li><strong>ClamAV antivirus pipeline</strong> — All uploads scanned before storage; malicious files rejected</li>
+      <li><strong>TLS 1.3 enforcement</strong> — Older TLS versions disabled; HSTS preload enabled</li>
+      <li><strong>Comprehensive audit trail</strong> — Every auth event, file access, and admin action shipped to Elasticsearch SIEM</li>
+      <li><strong>MFA enforcement</strong> — TOTP (RFC 6238) + WebAuthn (FIDO2) for all admin accounts</li>
+    </ul>
+  </div>
+</div>
+
+<!-- SECTION 3: RISK ANALYSIS -->
+<div class="section" id="risk-analysis">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div>
+        <div class="section-title">Risk Analysis & Threat Modeling</div>
+        <div class="section-meta">SVP-RA-001 · Phase 1 · Methodology: EBIOS RM + NIST SP 800-30</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card critical"><div class="card-label">Critical (≥20)</div><div class="card-value">3</div><div class="card-desc">Immediate action</div></div>
+      <div class="card high"><div class="card-label">High (15–19)</div><div class="card-value">5</div><div class="card-desc">Pre-deployment fix</div></div>
+      <div class="card medium"><div class="card-label">Medium (8–14)</div><div class="card-value">7</div><div class="card-desc">Within 30 days</div></div>
+      <div class="card low"><div class="card-label">Low (1–7)</div><div class="card-value">3</div><div class="card-desc">Within 90 days</div></div>
+    </div>
+
+    <h3>STRIDE Threat Model Summary</h3>
+    <table>
+      <tr><th>Category</th><th>Threat</th><th>L</th><th>I</th><th>Score</th><th>Severity</th></tr>
+      <tr><td>Spoofing</td><td>Credential brute force</td><td>4</td><td>5</td><td>20</td><td><span class="sev sev-critical">● Critical</span></td></tr>
+      <tr><td>Tampering</td><td>IDOR — unauthorized file access</td><td>4</td><td>5</td><td>20</td><td><span class="sev sev-critical">● Critical</span></td></tr>
+      <tr><td>Elevation</td><td>JWT privilege escalation</td><td>3</td><td>5</td><td>15</td><td><span class="sev sev-high">● High</span></td></tr>
+      <tr><td>Tampering</td><td>SQL injection</td><td>3</td><td>5</td><td>15</td><td><span class="sev sev-high">● High</span></td></tr>
+      <tr><td>Tampering</td><td>Malicious file upload (RCE)</td><td>3</td><td>5</td><td>15</td><td><span class="sev sev-high">● High</span></td></tr>
+      <tr><td>Disclosure</td><td>Stored XSS → token theft</td><td>3</td><td>5</td><td>15</td><td><span class="sev sev-high">● High</span></td></tr>
+      <tr><td>Spoofing</td><td>OAuth2 CSRF</td><td>3</td><td>4</td><td>12</td><td><span class="sev sev-medium">● Medium</span></td></tr>
+      <tr><td>Disclosure</td><td>SSRF → internal metadata</td><td>2</td><td>5</td><td>10</td><td><span class="sev sev-medium">● Medium</span></td></tr>
+      <tr><td>Denial</td><td>API rate limit bypass</td><td>3</td><td>3</td><td>9</td><td><span class="sev sev-medium">● Medium</span></td></tr>
+      <tr><td>Repudiation</td><td>Missing audit logs</td><td>3</td><td>3</td><td>9</td><td><span class="sev sev-medium">● Medium</span></td></tr>
+    </table>
+
+    <h3>OWASP Top 10 (2021) Coverage</h3>
+    <table>
+      <tr><th>ID</th><th>Category</th><th>CWE</th><th>Risk Score</th><th>Control Applied</th></tr>
+      <tr><td>A01</td><td>Broken Access Control</td><td>CWE-284</td><td><span class="sev sev-critical">20</span></td><td>RBAC + ownership check on every request</td></tr>
+      <tr><td>A02</td><td>Cryptographic Failures</td><td>CWE-327</td><td><span class="sev sev-high">16</span></td><td>Argon2id + AES-256-GCM + TLS 1.3</td></tr>
+      <tr><td>A03</td><td>Injection</td><td>CWE-89</td><td><span class="sev sev-critical">20</span></td><td>Django ORM only, SAST enforced in CI</td></tr>
+      <tr><td>A07</td><td>Auth Failures</td><td>CWE-287</td><td><span class="sev sev-critical">20</span></td><td>OAuth2 PKCE, MFA, lockout, RS256 JWT</td></tr>
+      <tr><td>A05</td><td>Security Misconfiguration</td><td>CWE-16</td><td><span class="sev sev-medium">14</span></td><td>ENV-based config, NGINX hardening</td></tr>
+      <tr><td>A08</td><td>SSRF</td><td>CWE-918</td><td><span class="sev sev-medium">10</span></td><td>URL allowlist, block RFC1918 ranges</td></tr>
+      <tr><td>A09</td><td>Logging Failures</td><td>CWE-778</td><td><span class="sev sev-medium">9</span></td><td>Structured audit log → Elasticsearch SIEM</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 4: ARCHITECTURE -->
+<div class="section" id="architecture">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div>
+        <div class="section-title">Security Architecture</div>
+        <div class="section-meta">SVP-ARCH-001 · Phase 2 · C4 Model Levels 1–3</div>
+      </div>
+    </div>
+
+    <h3>Defence in Depth Layers</h3>
+    <div class="arch-box">
+      <div class="arch-label">Layer 1</div>
+      <div class="arch-name">Cloudflare WAF / DDoS Protection</div>
+      <div class="arch-detail">Known malicious IPs blocked · DDoS mitigation · Bot detection</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 2</div>
+      <div class="arch-name">NGINX Reverse Proxy — TLS 1.3, HSTS, Security Headers, Rate Limiting</div>
+      <div class="arch-detail">TLS 1.3 only · HSTS preload · CSP · X-Frame-Options: DENY · 5 req/min login limit</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 3</div>
+      <div class="arch-name">API Gateway Middleware — JWT, CSRF, Request Size</div>
+      <div class="arch-detail">RS256 JWT validation · CSRF double-submit cookie · 50MB max body · algorithm whitelist</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 4</div>
+      <div class="arch-name">Input Validation — Whitelist-based, Every Endpoint</div>
+      <div class="arch-detail">Extension whitelist · MIME magic bytes · Filename sanitization · Size limit</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 5</div>
+      <div class="arch-name">RBAC Middleware — DB-authoritative Role Enforcement</div>
+      <div class="arch-detail">5-tier role system · Ownership check on every resource · Permission decorators on every route</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 6</div>
+      <div class="arch-name">Django ORM — Parameterized Queries (Zero Raw SQL)</div>
+      <div class="arch-detail">All DB queries via ORM · SAST blocks raw SQL strings at commit time</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 7</div>
+      <div class="arch-name">ClamAV + MIME Validation — Before Any Storage</div>
+      <div class="arch-detail">Virus scan on every upload · Magic byte MIME check · ELF/PE/PHP blocked</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-box">
+      <div class="arch-label">Layer 8</div>
+      <div class="arch-name">Encrypted Storage — AES-256-GCM + Private ACL + Pre-signed URLs</div>
+      <div class="arch-detail">No public file URLs ever · 5-minute presigned URL expiry · AES-256-GCM for sensitive fields</div>
+    </div>
+
+    <h3>Authentication Architecture</h3>
+    <table>
+      <tr><th>Component</th><th>Technology</th><th>Security Property</th></tr>
+      <tr><td>Login flow</td><td>OAuth2 PKCE Authorization Code</td><td>Prevents token interception, CSRF</td></tr>
+      <tr><td>Access token</td><td>JWT RS256, 15-minute expiry</td><td>Asymmetric signing prevents forgery</td></tr>
+      <tr><td>Refresh token</td><td>HttpOnly + SameSite=Strict cookie</td><td>Not accessible to JavaScript (XSS-resistant)</td></tr>
+      <tr><td>Token rotation</td><td>New refresh token per use, old blacklisted</td><td>Stolen token detection</td></tr>
+      <tr><td>MFA</td><td>TOTP RFC 6238 + WebAuthn FIDO2</td><td>Second factor for all admin accounts</td></tr>
+      <tr><td>Password hash</td><td>Argon2id (time=2, mem=65536)</td><td>GPU/ASIC resistant</td></tr>
+      <tr><td>Account lockout</td><td>5 attempts → exponential backoff</td><td>Brute force prevention</td></tr>
+      <tr><td>IP binding</td><td>Refresh token bound to IP in Redis</td><td>Session hijacking detection</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 5: IMPLEMENTATION -->
+<div class="section" id="implementation">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div>
+        <div class="section-title">Secure Implementation</div>
+        <div class="section-meta">Phase 3 · Python/Django · React/TypeScript</div>
+      </div>
+    </div>
+
+    <h3>Security Requirement Coverage</h3>
+    <table>
+      <tr><th>ID</th><th>Requirement</th><th>Implementation</th><th>Status</th></tr>
+      <tr><td>SR-001</td><td>Argon2id password hashing</td><td><code>PASSWORD_HASHERS = [Argon2PasswordHasher]</code></td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-002</td><td>RS256 JWT; reject <code>none</code></td><td><code>algorithms=["RS256"]</code> explicit whitelist</td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-003</td><td>MFA for admin accounts</td><td>TOTP + WebAuthn enforced at login</td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-005</td><td>Ownership check on file access</td><td><code>verify_resource_ownership()</code> on every endpoint</td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-008</td><td>TLS 1.3 only</td><td><code>ssl_protocols TLSv1.3;</code> in nginx.conf</td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-009</td><td>ClamAV scan before storage</td><td><code>scan_file_with_clamav()</code> before <code>put_object()</code></td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-010</td><td>MIME via magic bytes</td><td><code>validate_mime_type_magic_bytes()</code></td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-015</td><td>Audit log every auth event</td><td><code>AuditLogMiddleware</code> → Elasticsearch</td><td><span class="status-ok">✓ Verified</span></td></tr>
+      <tr><td>SR-018</td><td>No raw SQL</td><td>Django ORM only; Bandit in pre-commit hooks</td><td><span class="status-ok">✓ Verified</span></td></tr>
+    </table>
+
+    <h3>Technology Stack</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-label">Backend</div>
+        <div style="color:var(--accent);font-weight:600;font-size:15px;">Python 3.12 + Django</div>
+        <div class="card-desc">REST Framework, Celery, Argon2id, JWT RS256</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Frontend</div>
+        <div style="color:var(--accent);font-weight:600;font-size:15px;">React 18 + TypeScript</div>
+        <div class="card-desc">Strict CSP, DOMPurify, HttpOnly cookies</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Database</div>
+        <div style="color:var(--accent);font-weight:600;font-size:15px;">PostgreSQL 16</div>
+        <div class="card-desc">TLS required, encrypted at rest, scram-sha-256</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Storage</div>
+        <div style="color:var(--accent);font-weight:600;font-size:15px;">MinIO / S3</div>
+        <div class="card-desc">Private ACL, presigned URLs, AES-256-GCM</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Secrets</div>
+        <div style="color:var(--accent);font-weight:600;font-size:15px;">HashiCorp Vault</div>
+        <div class="card-desc">AWS KMS compatible, key rotation support</div>
+      </div>
+      <div class="card">
+        <div class="card-label">SIEM</div>
+        <div style="color:var(--accent);font-weight:600;font-size:15px;">Elasticsearch + Kibana</div>
+        <div class="card-desc">Immutable audit trail, alert rules, dashboards</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 6: PENTEST -->
+<div class="section" id="pentest">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div>
+        <div class="section-title">Penetration Test Results</div>
+        <div class="section-meta">SVP-PT-001 · Phase 4 · PTES + OWASP Testing Guide v4.2</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card high"><div class="card-label">High (Initial)</div><div class="card-value">2</div><div class="card-desc">Both remediated</div></div>
+      <div class="card medium"><div class="card-label">Medium (Initial)</div><div class="card-value">5</div><div class="card-desc">All remediated</div></div>
+      <div class="card low"><div class="card-label">Low (Initial)</div><div class="card-value">4</div><div class="card-desc">3 fixed, 1 accepted</div></div>
+      <div class="card success"><div class="card-label">Post-Remediation Open</div><div class="card-value">0</div><div class="card-desc">High/Medium</div></div>
+    </div>
+
+    <!-- FINDING PT-001 -->
+    <h3>Top Findings (Pre-Remediation)</h3>
+
+    <div class="finding">
+      <div class="finding-header">
+        <span class="finding-id">PT-001</span>
+        <span class="finding-title">JWT Algorithm Confusion (RS256 → HS256)</span>
+        <span class="sev sev-high">● High</span>
+        <span class="status-ok">✓ Fixed</span>
+      </div>
+      <div class="finding-body">
+        <div class="finding-meta">
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">CVSS 3.1</div>
+            <div class="cvss-score" style="color:var(--red)">8.1</div>
+          </div>
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">CWE</div>
+            <div class="finding-meta-value">CWE-327</div>
+          </div>
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">CVSS Vector</div>
+            <div class="finding-meta-value" style="font-family:var(--mono);font-size:11px;">AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N</div>
+          </div>
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">Remediated</div>
+            <div class="finding-meta-value">2025-01-20</div>
+          </div>
+        </div>
+        <p>The JWT library accepted HS256-signed tokens when configured for RS256. An attacker who obtained the RS256 public key (publicly accessible) could use it as the HMAC secret to forge tokens with arbitrary claims, including <code>role: "superadmin"</code>.</p>
+        <pre>// Attack: forge admin token signed with RS256 public key as HMAC secret
+// BEFORE fix: HTTP 200 — admin access granted
+// AFTER fix:  HTTP 401 — algorithm not permitted
+
+// Fix applied:
+jwt.decode(token, public_key, algorithms=["RS256"])  // Explicit whitelist</pre>
+      </div>
+    </div>
+
+    <!-- FINDING PT-002 -->
+    <div class="finding">
+      <div class="finding-header">
+        <span class="finding-id">PT-002</span>
+        <span class="finding-title">IDOR on File Download Endpoint</span>
+        <span class="sev sev-high">● High</span>
+        <span class="status-ok">✓ Fixed</span>
+      </div>
+      <div class="finding-body">
+        <div class="finding-meta">
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">CVSS 3.1</div>
+            <div class="cvss-score" style="color:var(--red)">7.5</div>
+          </div>
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">CWE</div>
+            <div class="finding-meta-value">CWE-284</div>
+          </div>
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">CVSS Vector</div>
+            <div class="finding-meta-value" style="font-family:var(--mono);font-size:11px;">AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N</div>
+          </div>
+          <div class="finding-meta-item">
+            <div class="finding-meta-label">Remediated</div>
+            <div class="finding-meta-value">2025-01-18</div>
+          </div>
+        </div>
+        <p>The download endpoint returned a pre-signed URL for any valid <code>file_id</code> regardless of whether the authenticated user owned the file. User B could access User A's confidential documents by providing the correct UUID.</p>
+        <pre>// Attack: User B requests User A's file_id
+GET /api/v1/files/3fa85f64-5717-4562-b3fc-2c963f66afa6/download/
+Authorization: Bearer &lt;user_b_token&gt;
+
+// BEFORE fix: HTTP 200 + presigned download URL (IDOR!)
+// AFTER fix:  HTTP 404 — "File not found."
+
+// Fix: ownership check before presigned URL generation
+if not verify_resource_ownership(file.owner_id, request.user):
+    return Response({"detail": "File not found."}, status=404)</pre>
+      </div>
+    </div>
+
+    <h3>Injection & Infrastructure Test Results</h3>
+    <table>
+      <tr><th>Test</th><th>Method</th><th>Result</th></tr>
+      <tr><td>SQL Injection (all endpoints)</td><td>sqlmap + manual</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+      <tr><td>Reflected XSS</td><td>Burp Suite + manual</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+      <tr><td>Stored XSS</td><td>Manual payload injection</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+      <tr><td>JWT <code>none</code> algorithm</td><td>jwt_tool</td><td><span class="status-ok">✓ Blocked (401)</span></td></tr>
+      <tr><td>JWT HS256 confusion</td><td>Custom script</td><td><span class="sev sev-high" style="font-size:11px;">Found → Fixed</span></td></tr>
+      <tr><td>IDOR file access</td><td>Manual cross-user test</td><td><span class="sev sev-high" style="font-size:11px;">Found → Fixed</span></td></tr>
+      <tr><td>Brute force (5 attempts)</td><td>Burp Intruder</td><td><span class="status-ok">✓ Blocked (429)</span></td></tr>
+      <tr><td>SSRF</td><td>Manual URL manipulation</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+      <tr><td>XXE</td><td>Malicious XML payload</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+      <tr><td>TLS downgrade</td><td>testssl.sh</td><td><span class="status-ok">✓ TLS 1.3 Only (A+)</span></td></tr>
+      <tr><td>CSRF bypass</td><td>Manual state manipulation</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+      <tr><td>Command injection (file processing)</td><td>Shell metacharacters</td><td><span class="status-ok">✓ Not Vulnerable</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 7: COMPLIANCE -->
+<div class="section" id="compliance">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div>
+        <div class="section-title">Compliance Mapping</div>
+        <div class="section-meta">Phase 5 · GDPR · ISO/IEC 27001:2022 · NIST CSF · CIS Controls v8</div>
+      </div>
+    </div>
+
+    <div class="card-grid">
+      <div class="card success"><div class="card-label">GDPR</div><div class="card-value">✓</div><div class="card-desc">Art. 5, 17, 20, 25, 32, 33 covered</div></div>
+      <div class="card success"><div class="card-label">ISO 27001:2022</div><div class="card-value">✓</div><div class="card-desc">Full Annex A mapped</div></div>
+      <div class="card success"><div class="card-label">NIST CSF</div><div class="card-value">✓</div><div class="card-desc">All 5 functions covered</div></div>
+      <div class="card success"><div class="card-label">CIS Controls v8</div><div class="card-value">✓</div><div class="card-desc">Controls 1–16 mapped</div></div>
+    </div>
+
+    <h3>GDPR Article Coverage</h3>
+    <table>
+      <tr><th>Article</th><th>Requirement</th><th>Implementation</th><th>Status</th></tr>
+      <tr><td>Art. 5</td><td>Data minimisation</td><td>Only required fields collected</td><td><span class="status-ok">✓</span></td></tr>
+      <tr><td>Art. 17</td><td>Right to erasure</td><td><code>DELETE /api/v1/users/{id}</code> cascade</td><td><span class="status-ok">✓</span></td></tr>
+      <tr><td>Art. 20</td><td>Data portability</td><td><code>GET /api/v1/users/{id}/export</code></td><td><span class="status-ok">✓</span></td></tr>
+      <tr><td>Art. 25</td><td>Privacy by design</td><td>Encryption, minimal data, audit logs</td><td><span class="status-ok">✓</span></td></tr>
+      <tr><td>Art. 32</td><td>Security measures</td><td>Argon2id, AES-256-GCM, TLS 1.3, RBAC</td><td><span class="status-ok">✓</span></td></tr>
+      <tr><td>Art. 33</td><td>Breach notification</td><td>IRP with 72h CNIL notification process</td><td><span class="status-ok">✓</span></td></tr>
+    </table>
+
+    <h3>NIST CSF Function Coverage</h3>
+    <table>
+      <tr><th>Function</th><th>Key Controls</th></tr>
+      <tr><td><strong>IDENTIFY</strong></td><td>Asset inventory (18 assets), risk register (18 risks), SBOM generation</td></tr>
+      <tr><td><strong>PROTECT</strong></td><td>Argon2id, AES-256-GCM, TLS 1.3, RBAC, MFA, rate limiting, ClamAV</td></tr>
+      <tr><td><strong>DETECT</strong></td><td>Elasticsearch SIEM, Kibana dashboards, alert rules (brute force, privilege escalation)</td></tr>
+      <tr><td><strong>RESPOND</strong></td><td>Account lockout (automated), IP blocking, token revocation, Incident Response Procedure</td></tr>
+      <tr><td><strong>RECOVER</strong></td><td>Business Continuity Plan, backup policy (AES-256-GCM, versioned), lessons learned</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SECTION 8: LESSONS LEARNED -->
+<div class="section" id="lessons">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div>
+        <div class="section-title">Lessons Learned & Future Work</div>
+        <div class="section-meta">Phase 5 · Post-Assessment Analysis</div>
+      </div>
+    </div>
+
+    <h3>Key Lessons</h3>
+    <ul>
+      <li><strong>JWT algorithm confusion is a real and exploitable attack.</strong> The assumption that RS256 configuration prevents HS256 attacks was incorrect. All JWT libraries must be explicitly configured with an algorithm whitelist, not just a preferred algorithm.</li>
+      <li><strong>IDOR is the most common and impactful vulnerability class.</strong> Every resource endpoint must implement server-side ownership verification. This cannot be assumed to be "handled by the framework" — it requires explicit code at each endpoint.</li>
+      <li><strong>SAST tools reduce but don't eliminate vulnerabilities.</strong> Bandit and Semgrep did not detect the JWT configuration issue because it was a library configuration problem, not a code pattern. Manual testing and pentest remain essential.</li>
+      <li><strong>Defence in depth works.</strong> The NGINX rate limiter blocked brute force attempts before they reached the application layer, even before the application-level lockout was engaged.</li>
+      <li><strong>Pre-signed URLs are the correct pattern for file downloads.</strong> Zero SSRF or direct file access vulnerabilities were found because files are never served via a public URL.</li>
+    </ul>
+
+    <h3>Future Work (Roadmap)</h3>
+    <table>
+      <tr><th>Item</th><th>Priority</th><th>Quarter</th></tr>
+      <tr><td>Presigned URL revocation on access revocation</td><td><span class="sev sev-medium">Medium</span></td><td>Q3 2025</td></tr>
+      <tr><td>WebAuthn hardware key enforcement for superadmin</td><td><span class="sev sev-high">High</span></td><td>Q2 2025</td></tr>
+      <tr><td>Kubernetes migration with network policies</td><td><span class="sev sev-medium">Medium</span></td><td>Q3 2025</td></tr>
+      <tr><td>SBOM integration into CI/CD pipeline</td><td><span class="sev sev-medium">Medium</span></td><td>Q2 2025</td></tr>
+      <tr><td>Automated IDOR regression tests on every PR</td><td><span class="sev sev-high">High</span></td><td>Q2 2025</td></tr>
+      <tr><td>SOC 2 Type II audit preparation</td><td><span class="sev sev-medium">Medium</span></td><td>Q4 2025</td></tr>
+      <tr><td>Bug bounty program (public launch)</td><td><span class="sev sev-low">Low</span></td><td>Q3 2025</td></tr>
+    </table>
+
+    <h3>Deliverables Summary</h3>
+    <table>
+      <tr><th>#</th><th>Deliverable</th><th>Format</th><th>Location</th><th>Status</th></tr>
+      <tr><td>1</td><td>Secure Web Application</td><td>GitHub repo + Docker</td><td><code>src/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>2</td><td>Risk Analysis Report</td><td>Markdown / PDF</td><td><code>docs/risk-analysis/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>3</td><td>Secure SDLC Design Document</td><td>Markdown / PDF</td><td><code>docs/architecture/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>4</td><td>Pentest Audit Report</td><td>Markdown / HTML</td><td><code>pentest/reports/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>5</td><td>Secure Coding Guidelines</td><td>Markdown</td><td><code>docs/security/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>6</td><td>Compliance Mapping</td><td>Markdown</td><td><code>docs/compliance/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>7</td><td>Security Regression Tests</td><td>pytest</td><td><code>tests/security/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+      <tr><td>8</td><td>Full HTML Report (this file)</td><td>HTML</td><td><code>reports/</code></td><td><span class="status-ok">✓ Complete</span></td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-classification">CONFIDENTIAL — INTERNAL USE ONLY</div>
+    <div class="footer-text">SecureVault Security Engineering Report · v5.0.0-final · 2025-01-31<br>
+    Document ID: SVP-FINAL-001 · Distribution: CISO, CTO, Engineering Lead, Security Team<br>
+    © 2025 SecureVault — All Rights Reserved — Unauthorized distribution prohibited</div>
+  </div>
+</footer>
+
+</body>
+</html>
